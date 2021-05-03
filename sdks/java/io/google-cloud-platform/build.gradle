@@ -151,7 +151,7 @@ task integrationTest(type: Test, dependsOn: processTestResources) {
           "--project=${gcpProject}",
           "--tempRoot=${gcpTempRoot}",
           "--gcpTempLocation=${gcpTempRoot}",
-//          "--numWorkers=20",
+//          "--numWorkers=40",
 //          "--autoscalingAlgorithm=NONE",
   ])
 

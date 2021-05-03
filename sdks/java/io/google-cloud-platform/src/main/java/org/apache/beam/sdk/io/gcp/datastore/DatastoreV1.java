@@ -1193,7 +1193,7 @@ public class DatastoreV1 {
     protected int hintNumWorkers;
     /** A function that transforms each {@code T} into a mutation. */
     private final SimpleFunction<T, Mutation> mutationFn;
-    private final RampupThrottlingFn<Mutation> rampupThrottlingFn;
+    private final RampupThrottlerTransform<Mutation> rampupThrottlingFn;
 
     /**
      * Note that {@code projectId} is only {@code @Nullable} as a matter of build order, but if it
@@ -1210,7 +1210,7 @@ public class DatastoreV1 {
       this.throttleRampup = throttleRampup;
       this.hintNumWorkers = hintNumWorkers;
       this.mutationFn = checkNotNull(mutationFn);
-      this.rampupThrottlingFn = new RampupThrottlingFn<>(hintNumWorkers);
+      this.rampupThrottlingFn = new RampupThrottlerTransform<>(hintNumWorkers);
     }
 
     @Override
@@ -1225,7 +1225,7 @@ public class DatastoreV1 {
           .apply("Convert to Mutation", MapElements.via(mutationFn));
       if (throttleRampup) {
         intermediateOutput = intermediateOutput
-            .apply("Enforce ramp-up through throttling", ParDo.of(rampupThrottlingFn));
+            .apply("Enforce ramp-up through throttling", rampupThrottlingFn);
       }
       intermediateOutput.apply(
               "Write Mutation to Datastore",

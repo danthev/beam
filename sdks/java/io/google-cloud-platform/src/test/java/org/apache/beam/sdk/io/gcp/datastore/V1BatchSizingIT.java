@@ -46,7 +46,7 @@ public class V1BatchSizingIT {
 
   private V1TestOptions options;
   private String project;
-  private final long numEntities = 1_000_000;
+  private final long numEntities = 5_000_000;
 
   @Before
   public void setup() {
@@ -63,7 +63,7 @@ public class V1BatchSizingIT {
     p.apply(GenerateSequence.from(0).to(numEntities))
         .apply(ParDo
             .of(new CreateEntityFn(options.getKind(), options.getNamespace(), null, 1, 0, 4)))
-        .apply(DatastoreIO.v1().write().withProjectId(project).withHintNumWorkers(20));
+        .apply(DatastoreIO.v1().write().withProjectId(project).withHintNumWorkers(10));
 
     // Completed successfully.
     State state = p.run().waitUntilFinish();
