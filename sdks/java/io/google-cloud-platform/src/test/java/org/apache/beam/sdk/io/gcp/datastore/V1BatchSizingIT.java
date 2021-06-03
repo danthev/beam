@@ -26,7 +26,9 @@ import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.gcp.datastore.V1TestUtil.CreateEntityFn;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.TestPipeline;
+import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.Reshuffle;
 import org.apache.beam.sdk.values.PCollection.IsBounded;
 import org.joda.time.Instant;
 import org.junit.Before;
@@ -63,7 +65,7 @@ public class V1BatchSizingIT {
     p.apply(GenerateSequence.from(0).to(numEntities))
         .apply(ParDo
             .of(new CreateEntityFn(options.getKind(), options.getNamespace(), null, 1, 0, 4)))
-        .apply(DatastoreIO.v1().write().withProjectId(project).withHintNumWorkers(10));
+        .apply(DatastoreIO.v1().write().withProjectId(project).withRampupThrottlingDisabled());
 
     // Completed successfully.
     State state = p.run().waitUntilFinish();
@@ -93,7 +95,7 @@ public class V1BatchSizingIT {
     p.apply(GenerateSequence.from(0).to(10_000_000))
         .apply(ParDo
             .of(new CreateEntityFn(options.getKind(), options.getNamespace(), null, 100, 0, 4)))
-        .apply(DatastoreIO.v1().write().withProjectId(project).withHintNumWorkers(20));
+        .apply(DatastoreIO.v1().write().withProjectId(project).withHintNumWorkers(1000));
 
     // Completed successfully.
     State state = p.run().waitUntilFinish();
