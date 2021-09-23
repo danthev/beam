@@ -40,6 +40,9 @@ from apache_beam.testing.test_stream import TestStream
 
 
 class PipelineInstrumentTest(unittest.TestCase):
+  def setUp(self):
+    ie.new_env()
+
   def cache_key_of(self, name, pcoll):
     return repr(
         instr.CacheKey(
@@ -186,7 +189,7 @@ class PipelineInstrumentTest(unittest.TestCase):
 
     # Add some extra PTransform afterwards to make sure that only the unbounded
     # sources remain.
-    c = (a, b) | beam.CoGroupByKey()
+    c = (a, b) | beam.Flatten()
     _ = c | beam.Map(lambda x: x)
 
     ib.watch(locals())
@@ -339,7 +342,7 @@ class PipelineInstrumentTest(unittest.TestCase):
       if not isinstance(pcoll, beam.pvalue.PCollection):
         continue
       cache_key = self.cache_key_of(name, pcoll)
-      self._mock_write_cache(p_original, [b''], cache_key)
+      self._mock_write_cache(p_original, [], cache_key)
 
     # Instrument the original pipeline to create the pipeline the user will see.
     instrumenter = instr.build_pipeline_instrument(p_original)
@@ -495,7 +498,7 @@ class PipelineInstrumentTest(unittest.TestCase):
     ib.watch(locals())
 
     self._mock_write_cache(
-        p_original, [b''], self.cache_key_of('source_2', source_2))
+        p_original, [], self.cache_key_of('source_2', source_2))
     ie.current_env().mark_pcollection_computed([source_2])
 
     # Instrument the original pipeline to create the pipeline the user will see.
@@ -707,7 +710,7 @@ class PipelineInstrumentTest(unittest.TestCase):
       if not isinstance(pcoll, beam.pvalue.PCollection):
         continue
       cache_key = self.cache_key_of(name, pcoll)
-      self._mock_write_cache(p_original, [b''], cache_key)
+      self._mock_write_cache(p_original, [], cache_key)
 
     # Instrument the original pipeline to create the pipeline the user will see.
     instrumenter = instr.build_pipeline_instrument(p_original)

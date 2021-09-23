@@ -47,11 +47,13 @@ public class RampupThrottlingFn<T> extends DoFn<T, T> implements Serializable {
   private static final FluentBackoff fluentBackoff = FluentBackoff.DEFAULT;
 
   private final int numWorkers;
-  private final Counter throttlingMsecs =
-      Metrics.counter(RampupThrottlingFn.class, "throttling-msecs");
 
-  // Initialized on Beam setup.
+  @VisibleForTesting
+  Counter throttlingMsecs = Metrics.counter(RampupThrottlingFn.class, "throttling-msecs");
+
+  // Initialized on every setup.
   private transient MovingFunction successfulOps;
+  // Initialized once in constructor.
   private Instant firstInstant;
 
   @VisibleForTesting transient Sleeper sleeper;
@@ -78,7 +80,7 @@ public class RampupThrottlingFn<T> extends DoFn<T, T> implements Serializable {
         (durationSinceFirst.getStandardMinutes() - rampUpIntervalMinutes) / rampUpIntervalMinutes;
     double growth = Math.max(0, calculatedGrowth);
     double maxOpsBudget = BASE_BUDGET / this.numWorkers * Math.pow(1.5, growth);
-    return (int) Math.max(1, maxOpsBudget);
+    return (int) Math.min(Integer.MAX_VALUE, Math.max(1, maxOpsBudget));
   }
 
   @Setup
@@ -91,7 +93,6 @@ public class RampupThrottlingFn<T> extends DoFn<T, T> implements Serializable {
             1 /* numSignificantBuckets */,
             1 /* numSignificantSamples */,
             Sum.ofLongs());
-    this.firstInstant = Instant.now();
   }
 
   /** Emit only as many elements as the exponentially increasing budget allows. */
@@ -107,7 +108,7 @@ public class RampupThrottlingFn<T> extends DoFn<T, T> implements Serializable {
       long currentOpCount = successfulOps.get(instant.getMillis());
       long availableOps = maxOpsBudget - currentOpCount;
 
-      if (availableOps > 0) {
+      if (maxOpsBudget >= Integer.MAX_VALUE || availableOps > 0) {
         c.output(element);
         successfulOps.add(instant.getMillis(), 1);
         return;

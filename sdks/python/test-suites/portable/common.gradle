@@ -119,6 +119,31 @@ task createProcessWorker {
   }
 }
 
+def createSamzaRunnerTestTask(String workerType) {
+  def taskName = "samzaCompatibilityMatrix${workerType}"
+  def jobServerJar = "${rootDir}/runners/samza/job-server/build/libs/beam-runners-samza-job-server-${version}.jar"
+  def options = "--samza_job_server_jar=${jobServerJar} --environment_type=${workerType}"
+  if (workerType == 'PROCESS') {
+    options += " --environment_options=process_command=${buildDir.absolutePath}/sdk_worker.sh"
+  }
+  def task = toxTask(taskName, 'samza-runner-test', options)
+  task.dependsOn ":runners:samza:job-server:shadowJar"
+  if (workerType == 'DOCKER') {
+    task.dependsOn ext.pythonContainerTask
+  } else if (workerType == 'PROCESS') {
+    task.dependsOn 'createProcessWorker'
+  }
+  return task
+}
+
+createSamzaRunnerTestTask('DOCKER')
+createSamzaRunnerTestTask('PROCESS')
+createSamzaRunnerTestTask('LOOPBACK')
+
+task samzaValidatesRunner() {
+  dependsOn 'samzaCompatibilityMatrixLOOPBACK'
+}
+
 def createSparkRunnerTestTask(String workerType) {
   def taskName = "sparkCompatibilityMatrix${workerType}"
   // `project(':runners:spark:2:job-server').shadowJar.archivePath` is not resolvable until runtime, so hard-code it here.
@@ -171,6 +196,7 @@ project.task("postCommitPy${pythonVersionSuffix}IT") {
           ':sdks:java:io:google-cloud-platform:expansion-service:shadowJar',
           ':sdks:java:io:kinesis:expansion-service:shadowJar',
           ':sdks:java:extensions:schemaio-expansion-service:shadowJar',
+          ':sdks:java:io:debezium:expansion-service:shadowJar'
   ]
 
   doLast {
@@ -180,6 +206,7 @@ project.task("postCommitPy${pythonVersionSuffix}IT") {
             "apache_beam.io.external.xlang_kafkaio_it_test",
             "apache_beam.io.external.xlang_kinesisio_it_test",
             "apache_beam.io.gcp.tests.xlang_spannerio_it_test",
+            "apache_beam.io.external.xlang_debeziumio_it_test",
     ]
     def testOpts = ["--tests=${tests.join(',')}"]
     def pipelineOpts = [
