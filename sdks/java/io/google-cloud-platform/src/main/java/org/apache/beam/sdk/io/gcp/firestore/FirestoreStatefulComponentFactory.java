@@ -99,7 +99,7 @@ class FirestoreStatefulComponentFactory implements Serializable {
         GcpOptions gcpOptions = options.as(GcpOptions.class);
         builder
             .setCredentialsProvider(FixedCredentialsProvider.create(gcpOptions.getGcpCredential()))
-            .setEndpoint("batch-firestore.googleapis.com:443");
+            .setEndpoint("batch-test-firestore.sandbox.googleapis.com:443");
       }
 
       ClientContext clientContext = ClientContext.create(builder.build());

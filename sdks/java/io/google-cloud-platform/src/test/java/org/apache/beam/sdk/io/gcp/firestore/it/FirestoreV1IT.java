@@ -26,14 +26,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
-import com.google.firestore.v1.BatchGetDocumentsRequest;
-import com.google.firestore.v1.Document;
-import com.google.firestore.v1.ListCollectionIdsRequest;
-import com.google.firestore.v1.ListDocumentsRequest;
-import com.google.firestore.v1.PartitionQueryRequest;
-import com.google.firestore.v1.Precondition;
-import com.google.firestore.v1.RunQueryRequest;
-import com.google.firestore.v1.StructuredQuery;
+import com.google.firestore.v1.*;
 import com.google.firestore.v1.StructuredQuery.CollectionSelector;
 import com.google.firestore.v1.StructuredQuery.Direction;
 import com.google.firestore.v1.StructuredQuery.FieldFilter;
@@ -41,8 +34,6 @@ import com.google.firestore.v1.StructuredQuery.FieldFilter.Operator;
 import com.google.firestore.v1.StructuredQuery.FieldReference;
 import com.google.firestore.v1.StructuredQuery.Filter;
 import com.google.firestore.v1.StructuredQuery.Order;
-import com.google.firestore.v1.Value;
-import com.google.firestore.v1.Write;
 import com.google.protobuf.Timestamp;
 import com.google.rpc.Code;
 import java.util.Iterator;
@@ -51,20 +42,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+
+import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.gcp.firestore.FirestoreIO;
 import org.apache.beam.sdk.io.gcp.firestore.FirestoreV1.WriteFailure;
 import org.apache.beam.sdk.io.gcp.firestore.RpcQosOptions;
 import org.apache.beam.sdk.testing.PAssert;
-import org.apache.beam.sdk.transforms.Create;
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.PTransform;
-import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.TypeDescriptors;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
-public final class FirestoreV1IT extends BaseFirestoreIT {
+public class FirestoreV1IT extends BaseFirestoreIT {
 
   @Test
   public void batchWrite_partialFailureOutputsToDeadLetterQueue()
@@ -145,6 +137,35 @@ public final class FirestoreV1IT extends BaseFirestoreIT {
 
     List<KV<String, String>> expected = newArrayList(KV.of(docId, docId), KV.of(docId2, "baz"));
     assertEquals(expected, actualDocumentIds);
+  }
+
+  @Test
+  public void testrunQuery() {
+      StructuredQuery.Builder queryBuilder =
+              StructuredQuery.newBuilder()
+                      .addFrom(
+                              CollectionSelector.newBuilder()
+                                      .setAllDescendants(false)
+                                      .setCollectionId("test_commit"))
+                      .addOrderBy(StructuredQuery.Order.newBuilder()
+                              .setField(StructuredQuery.FieldReference.newBuilder().setFieldPath("1").build())
+                              .setDirection(StructuredQuery.Direction.ASCENDING)
+                              .build());
+      RunQueryRequest request = RunQueryRequest.newBuilder()
+              .setParent(String.format("%s/test_commit", helper.getDatabase()))
+              .setStructuredQuery(queryBuilder.build())
+              .build();
+
+      testPipeline
+              .apply("Create RunQueryRequest", Create.of(request))
+              .apply("Run Query", FirestoreIO.v1().read().runQuery().build())
+              .apply("Get Output Documents",
+                      MapElements.into(TypeDescriptors.strings())
+                              .via( (runQueryResponse) -> runQueryResponse.getDocument().getName())
+              )
+              .apply(Count.globally());
+      PipelineResult result = testPipeline.run();
+      result.waitUntilFinish();
   }
 
   @Override

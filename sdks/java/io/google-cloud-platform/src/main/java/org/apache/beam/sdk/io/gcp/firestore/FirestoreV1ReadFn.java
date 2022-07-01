@@ -62,6 +62,8 @@ import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.annotations.VisibleForTesting;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.joda.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A collection of {@link org.apache.beam.sdk.transforms.DoFn DoFn}s for each of the supported read
@@ -87,6 +89,8 @@ final class FirestoreV1ReadFn {
   static final class RunQueryFn
       extends StreamingFirestoreV1ReadFn<RunQueryRequest, RunQueryResponse> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RunQueryFn.class);
+
     RunQueryFn(
         JodaClock clock,
         FirestoreStatefulComponentFactory firestoreStatefulComponentFactory,
@@ -108,6 +112,7 @@ final class FirestoreV1ReadFn {
     @Override
     protected RunQueryRequest setStartFrom(
         RunQueryRequest element, RunQueryResponse runQueryResponse) {
+      LOG.info("Trying to resume runquery, last element was " + runQueryResponse);
       StructuredQuery query = element.getStructuredQuery();
       StructuredQuery.Builder builder;
       List<Order> orderByList = query.getOrderByList();
@@ -396,6 +401,9 @@ final class FirestoreV1ReadFn {
           InT extends Message, OutT extends Message>
       extends BaseFirestoreV1ReadFn<InT, OutT> {
 
+
+    private static final Logger LOG = LoggerFactory.getLogger(StreamingFirestoreV1ReadFn.class);
+
     protected StreamingFirestoreV1ReadFn(
         JodaClock clock,
         FirestoreStatefulComponentFactory firestoreStatefulComponentFactory,
@@ -425,6 +433,7 @@ final class FirestoreV1ReadFn {
           InT request =
               lastReceivedValue == null ? element : setStartFrom(element, lastReceivedValue);
           attempt.recordRequestStart(start);
+          LOG.info("Attempting request " + request.toString());
           ServerStream<OutT> serverStream = getCallable(firestoreStub).call(request);
           attempt.recordRequestSuccessful(clock.instant());
           for (OutT out : serverStream) {
