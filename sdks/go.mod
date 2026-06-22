@@ -20,14 +20,14 @@
 // directory.
 module github.com/apache/beam/sdks/v2
 
-go 1.18
+go 1.23
 
 require (
 	cloud.google.com/go/bigquery v1.34.1
 	cloud.google.com/go/datastore v1.8.0
 	cloud.google.com/go/pubsub v1.23.1
 	cloud.google.com/go/storage v1.23.0
-	github.com/docker/go-connections v0.4.0
+	github.com/docker/go-connections v0.7.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/protobuf v1.5.2 // TODO(danoliveira): Fully replace this with google.golang.org/protobuf
 	github.com/google/go-cmp v0.5.8
@@ -42,7 +42,7 @@ require (
 	github.com/xitongsys/parquet-go-source v0.0.0-20220315005136-aec0fe3e777c
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2
-	golang.org/x/sys v0.0.0-20220624220833-87e55d714810
+	golang.org/x/sys v0.10.0
 	golang.org/x/text v0.3.7
 	google.golang.org/api v0.86.0
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f
@@ -57,7 +57,7 @@ require (
 	cloud.google.com/go/compute v1.7.0 // indirect
 	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/Microsoft/go-winio v0.4.17 // indirect
+	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.8.23 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20200730104253-651201b0f516 // indirect
 	github.com/apache/thrift v0.14.2 // indirect
@@ -86,7 +86,7 @@ require (
 	github.com/opencontainers/runc v1.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
